@@ -1,97 +1,152 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
-fetch('https://example.com/users.json', {
-  method: 'POST',
-  mode: 'cors',
-  redirect: 'follow',
-  headers: new Headers({
-    'Content-Type': 'text/plain'
-  })
-})
-  .then(res => res.json())
-  .then(response => { /* manejar la respuesta */ })
-  .catch(error => console.error(error));
+const Home = () => {
+  const [entry, setEntry] = useState("");
+  const [arrayEntry, setArrayEntry] = useState([]);
 
+  console.log(entry);
+  console.log(arrayEntry);
 
-const TodoApp = () => {
-  const [todos, setTodos] = useState([]);
-
-  // Obtener la lista de tareas 
-  useEffect(() => {
-    fetch('https://playground.4geeks.com/todo/user/alesanchezr')
-      .then(response => response.json())
-      .then(data => setTodos(data))
-      .catch(error => console.log(error));
-  }, []);
-
-  // Función para agregar tarea
-  const addTodo = (newTodo) => {
-    const updatedTodos = [...todos, { label: newTodo, done: false }];
-    setTodos(updatedTodos);
-    syncWithServer(updatedTodos);
+  const addToDoToList = () => {
+    setArrayEntry([...arrayEntry, { label: entry, done: false }]);
+    setEntry("");
   };
 
-  // Función para eliminar una tarea
-  const deleteTodo = (index) => {
-    const updatedTodos = todos.filter((i) => i !== index);
-    setTodos(updatedTodos);
-    syncWithServer(updatedTodos);
+  const deleteTask = (deletedTask) => {
+    const filteredArray = arrayEntry.filter((task) => task !== deletedTask);
+    setArrayEntry(filteredArray);
   };
 
-  // Función para limpiar todas las tareas
-  //const clearTodos = () => {
-    //setTodos([]);
-    //syncWithServer([]);
-  //};
-
-  // Función para sincronizar la lista  con servidor
-  const syncWithServer = (updatedTodos) => {
-    fetch('https://playground.4geeks.com/todo/user/alesanchezr', {
-      method: 'PUT',
-      body: JSON.stringify(updatedTodos),
+  const createUser = () => {
+    fetch("https://assets.breatheco.de/apis/fake/todos/user/molivieri", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify([]),
     })
-      .then((resp) => {
-        console.log(resp.ok); // Será ok si la respuesta correcta
-        console.log(resp.text()); // Intentará devolver el resultado exacto como string
-        return resp.json(); // Intentará parsear el resultado a JSON y retornará una promesa donde puedes usar .then para seguir con la lógica
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.result === "ok") {
+          getUser();
+        }
+        console.log(data);
+      })
+      .catch((err) => console.log(err));
+  };
+
+  const getUser = () => {
+    fetch("https://assets.breatheco.de/apis/fake/todos/user/molivieri", {
+      method: "GET",
+    })
+      .then((response) => {
+        console.log(response.status);
+        if (response.status === 404) {
+          createUser();
+        } else {
+          return response.json();
+        }
       })
       .then((data) => {
-        // comienzo después de finalizar busqueda
-        console.log(data); // Imprimo objeto  recibido del servidor
+        if (data) {
+          setArrayEntry(data);
+        }
       })
-      .catch((error) => {
-        // buscar errore
-        console.log(error);
-      });
+      .catch((err) => console.log(err));
   };
 
+  const updateToDos = () => {
+    fetch("https://assets.breatheco.de/apis/fake/todos/user/molivieri", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(arrayEntry),
+    })
+      .then((response) => response.json())
+      .then((data) => console.log(data))
+      .catch((err) => console.log(err));
+  };
+
+  const deleteToDos = () => {
+    fetch("https://assets.breatheco.de/apis/fake/todos/user/molivieri", {
+      method: "DELETE",
+    })
+      .then((response) => {
+        if (response.status === 404) {
+          createUser();
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log(data);
+        setArrayEntry([]);
+      })
+      .catch((err) => console.log(err));
+  };
+
+  useEffect(() => {
+    getUser();
+    console.log("Me estoy ejecutando porque ya cargó el componente");
+  }, []);
+
+  useEffect(() => {
+    if (arrayEntry.length > 0) {
+      updateToDos();
+    }
+  }, [arrayEntry]);
+
   return (
-    <div>
-      <h1>TODO List</h1>
-      <input
-        type="text"
-        placeholder="Add a new task"
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && e.target.value.trim() !== '') {
-            addTodo(e.target.value);
-            e.target.value = '';
-          }
-        }}
-      />
-      <ul>
-        {todos.map((todo, index) => (
-          <li key={index}>
-            {todo.label}
-            <button onClick={() => deleteTodo(index)}>Delete</button>
-          </li>
-        ))}
-      </ul>
-      <button onClick={clearTodos}>Clear All</button>
-    </div>
+    <>
+      <div className="container col-6">
+        <div className="input-group mb-3 my-4">
+          <input
+            type="text"
+            className="form-control"
+            id="toDoInputs"
+            placeholder="Enter Activity To Do"
+            aria-label="To Do's"
+            aria-describedby="basic-addon2"
+            onChange={(e) => setEntry(e.target.value)}
+            value={entry}
+          />
+          <button
+            className="input-group-text"
+            id="basic-addon2"
+            onClick={addToDoToList}
+          >
+            Submit
+          </button>
+        </div>
+
+        <div>
+          <ul className="list-group list-group-numbered">
+            {arrayEntry.length > 0 ?
+              arrayEntry.map((task, index) => (
+                <li key={index} className="list-group-item d-flex">
+                  <span style={{ width: "90%" }}>{task.label}</span>
+                  <button
+                    className="text-align-right"
+                    onClick={() => deleteTask(task)}
+                  >
+                    Delete
+                  </button>
+                </li>
+              )) : null}
+          </ul>
+        </div>
+      </div>
+
+      <div className="grid text-center my-2">
+        <button
+          className="col-2"
+          onClick={() => deleteToDos()}
+        >
+          Clear All
+        </button>
+      </div>
+    </>
   );
 };
 
-export default TodoApp;
+export default Home;
